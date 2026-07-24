@@ -1,0 +1,15 @@
+{
+  "model_hf_name": "pritamdeka/S-PubMedBert-MS-MARCO",
+  "model_hf_commit_sha": "96786c7024f95c5aac7f2b9a18086c7b97b23036",
+  "model_tier": "biomedical",
+  "embedding_dimension": 768,
+  "normalization": "L2-normalized vectors, inner product (FAISS IndexFlatIP) == cosine similarity",
+  "passage_prefix_applied": "(none)",
+  "query_prefix_to_apply_at_retrieval": "(none)",
+  "chunk_set": "fixed_500",
+  "n_chunks": 8963,
+  "corpus_git_commit": "bff28ca1b087413096eb370d9280d39d093d2b06",
+  "encode_time_seconds": 113.5,
+  "model_load_time_seconds": 9.3,
+  "encoded_on": "Colab GPU"
+}

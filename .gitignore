@@ -1,0 +1,14 @@
+# Full verbatim document text -- not pushed for redistribution-rights
+# reasons documented in CORPUS_LOG.md (ACOG_POSTPARTUM_CONDITIONS is
+# all-rights-reserved, not CC-licensed like the WHO/Kenya MoH sources).
+# Reproducible from metadata.csv's URLs + the pipeline scripts.
+Maternal_RAG_Corpus/raw_pdfs/
+Maternal_RAG_Corpus/extracted_text/
+Maternal_RAG_Corpus/cleaned_text/
+Maternal_RAG_Corpus/chunks/
+Maternal_RAG_Corpus/chunks_tagged/
+Maternal_RAG_Corpus/validation_sample.csv
+Maternal_RAG_Corpus/stance_audit.csv
+
+__pycache__/
+*.pyc
