@@ -119,8 +119,12 @@ limitation of the search.
 | NHS_BABY_BLUES | NHS | REASSURE | postnatal | 5 |
 
 **Scale:** 14 documents, 1,753 pages, 3,896,745 characters as extracted
-(`extract_text.py`, 2026-07-23), ~5,000 chunks projected at 500 chars/chunk.
-**All 14 have extractable text layers, verdict "text OK". No OCR required.**
+(`extract_text.py`, 2026-07-23). Chunking (Stage 4) measured, not
+projected: 5,313–14,937 chunks depending on strategy/size (8,307 at
+para_500, the set used for validation/audit sampling elsewhere in this
+log) — see §6 for the full breakdown per strategy. Canonical, regenerable
+via `report_stats.py`. **All 14 have extractable text layers, verdict
+"text OK". No OCR required.**
 
 ### The ambiguity pairs (the study's engine) — 4 topics
 
@@ -248,7 +252,59 @@ document level for `KE_MCH_HANDBOOK`, so the chunk-level enum must carry it too)
       not evidence that validation happened. The rule-based tags in
       `chunks_tagged/` stand as final for this version's purposes, with the
       known precision/recall gaps above stated as limitations, not resolved.
-- [ ] **Stage 5 — Embed & index.**
+- [ ] **Stage 5 — Embed & index. IN PROGRESS, moved to Colab (2026-07-23).**
+      Two models (`sentence-transformers/all-MiniLM-L6-v2` small-general,
+      `intfloat/e5-base-v2` strong-general) + one biomedical
+      (`pritamdeka/S-PubMedBert-MS-MARCO`) x 6 chunk sets = up to 18 indexes,
+      per the V.A plan (cut biomedical first if forced; the "not an artefact
+      of one encoder" claim needs >=2 general models).
+      **Bug found and fixed:** `faiss` + `torch`/`sentence-transformers`
+      loaded in the same process segfault reproducibly on this Windows CPU
+      setup (confirmed directly: isolated encode-only run succeeds, adding a
+      `faiss.IndexFlatIP` call in the same process crashes every time; the
+      standard `KMP_DUPLICATE_LIB_OK=TRUE` OpenMP workaround did not fix it).
+      Root-caused as a native OpenMP/MKL runtime conflict between the two
+      libraries' bundled binaries, not a resource or Bash-tool problem —
+      confirmed by first misreading it as a `uv_spawn` error before finding
+      the actual `Segmentation fault` in the task's raw output. Fixed
+      structurally: `embed_index.py` no longer does the work itself, it runs
+      `encode_chunks.py` (torch/sentence-transformers only, never imports
+      faiss) and `build_faiss_index.py` (faiss/numpy only, never imports
+      torch) as two separate OS subprocesses, so the two native libraries
+      never share a process's memory space. Verified with an isolated
+      500-chunk test before trusting it at scale.
+      **Then found a second, distinct problem: throughput, not a bug.**
+      After the segfault fix, a real local run showed MiniLM alone (the
+      smallest of the three models) took ~50 min just for its 6 chunk sets
+      (55,597 chunks total across all sets); `e5-base-v2` and
+      `pubmedbert-msmarco` are both ~5x larger (768-dim vs. MiniLM's 384-dim)
+      and would plausibly each take several hours on this CPU-only machine
+      (no CUDA). Estimated 6-8 hours for the full grid — not caught by
+      guessing, caught by checking `tasklist` for real accumulated CPU time
+      on the worker process and checking `indexes/` on disk directly for
+      which (model, chunk_set) pairs had actually completed, since stdout
+      buffering through the subprocess chain gave zero visible progress for
+      several minutes despite the process actively computing.
+      **Decision: moved encoding to Google Colab (free GPU).** Partial local
+      output (3 completed MiniLM chunk-sets, 1 interrupted mid-write) was
+      cleared rather than cherry-picked into the Colab results, for a single
+      consistent run instead of a mixed local/Colab set with inconsistent
+      `encoded_on` provenance. `MatSafe_Embedding_Colab.ipynb` mirrors
+      `encode_chunks.py`'s exact model list, prefix conventions, and
+      manifest schema, with `device='cuda'` for encoding (FAISS indexing
+      stays CPU-side even there — index build for a few thousand vectors is
+      fast regardless of accelerator). `chunks_tagged_for_colab.zip` (7.5MB)
+      is the upload payload; `CORPUS_GIT_COMMIT` is hardcoded in the
+      notebook to the commit `chunks_tagged/` was frozen at
+      (`bff28ca1b087413096eb370d9280d39d093d2b06`) since Colab has no access
+      to the local git repo. Neither the zip nor the notebook's output
+      indexes are pushed to GitHub (see `.gitignore`) — same
+      redistribution-rights reasoning as the rest of the full-text corpus
+      artifacts, plus indexes are large binaries fully reproducible from
+      `chunks_tagged/` + a manifest's pinned model commit SHA.
+      `encode_chunks.py`/`build_faiss_index.py`/`embed_index.py` are
+      unchanged and remain correct for local use elsewhere — only the
+      environment changed, not the logic.
 - [x] **Stage 6a — Query set.** `build_query_set.py` → `query_set.csv`. 40
       queries: 32 urgent (8/topic × 4 topics) + 8 routine (2/topic), added
       specifically so a degenerate "always retrieve alarm content" retriever
@@ -373,9 +429,10 @@ guaranteed accuracy.
 
 ## 7. Open issues
 
-1. **Corpus is small by IR standards** (~5,000 chunks vs thousands of docs in
-   MS MARCO / BEIR). Enough to *demonstrate* the phenomenon; not enough to claim
-   generality. State explicitly.
+1. **Corpus is small by IR standards** (5,313–14,937 chunks depending on
+   strategy, vs thousands of docs in MS MARCO / BEIR). Enough to
+   *demonstrate* the phenomenon; not enough to claim generality. State
+   explicitly.
 2. **Geographic mismatch.** NHS (UK) and CDC (USA) patient materials in a
    Kenya-focused study. Defensible (English-language, widely accessed online by
    Kenyan users) but must be justified, not ignored.
@@ -550,6 +607,22 @@ Kept for the paper's provenance record. Ordered oldest to newest.
 - `safety_label.py` — Stage 6b: `L(d, q)` implementation. Run directly
   (`python safety_label.py`) to execute its smoke test against real Stage 4b
   output.
+- `report_stats.py` — the single source of truth for every number in this
+  log or the paper (document/page/char counts, chunk counts per strategy,
+  tagging distributions, audit mismatch counts, query set breakdown, and
+  the current git commit hash). **Re-run this as the last step before any
+  freeze or paper draft** — every number in prose should trace to its
+  output, not be hand-transcribed and left to drift. Caught two real
+  staleness bugs on its first real use (2026-07-23): the validation-sample
+  count (§ Stage 4b entry, fixed in place) and the chunk-count estimate in
+  this section (fixed above). Writes `Maternal_RAG_Corpus/stats_report.json`.
+- `encode_chunks.py` / `build_faiss_index.py` / `embed_index.py` — Stage 5.
+  Split into two scripts run as separate OS processes (`faiss` + `torch`
+  loaded together segfault reproducibly on this Windows setup — see Stage 5
+  entry above for the full diagnosis). `embed_index.py` is the orchestrator;
+  run it directly, or run the two scripts separately. Stage 5 was ultimately
+  moved to `MatSafe_Embedding_Colab.ipynb` (GPU) for throughput reasons, not
+  correctness reasons — these scripts remain the canonical logic.
 - Fixed seed: `RANDOM_STATE = 42` throughout
 - Raw PDFs in `raw_pdfs/` are **never edited** — all processing writes elsewhere
 

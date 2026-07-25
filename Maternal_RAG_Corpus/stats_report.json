@@ -1,0 +1,151 @@
+{
+  "generated_by": "report_stats.py",
+  "corpus_git_commit": "bff28ca1b087413096eb370d9280d39d093d2b06",
+  "documents": {
+    "total_documents": 14,
+    "guideline_or_standard": 7,
+    "patient_education": 7,
+    "total_pages": 1753,
+    "total_extracted_characters": 3896745
+  },
+  "chunks_per_strategy": {
+    "fixed_300": 14937,
+    "fixed_500": 8963,
+    "fixed_800": 5603,
+    "para_300": 12474,
+    "para_500": 8307,
+    "para_800": 5313
+  },
+  "tagging": {
+    "fixed_300": {
+      "total_chunks": 14937,
+      "stance": {
+        "neutral": 14769,
+        "alarm": 133,
+        "reassure": 35
+      },
+      "care_phase": {
+        "background": 12955,
+        "recognition": 193,
+        "acute": 304,
+        "treatment": 822,
+        "recovery": 355,
+        "prevention": 308
+      }
+    },
+    "fixed_500": {
+      "total_chunks": 8963,
+      "stance": {
+        "neutral": 8801,
+        "alarm": 128,
+        "reassure": 34
+      },
+      "care_phase": {
+        "recognition": 179,
+        "acute": 305,
+        "treatment": 703,
+        "recovery": 316,
+        "background": 7178,
+        "prevention": 282
+      }
+    },
+    "fixed_800": {
+      "total_chunks": 5603,
+      "stance": {
+        "neutral": 5443,
+        "alarm": 126,
+        "reassure": 33,
+        "mixed": 1
+      },
+      "care_phase": {
+        "recognition": 176,
+        "acute": 281,
+        "treatment": 591,
+        "background": 4026,
+        "recovery": 268,
+        "prevention": 261
+      }
+    },
+    "para_300": {
+      "total_chunks": 12474,
+      "stance": {
+        "neutral": 12322,
+        "alarm": 119,
+        "reassure": 33
+      },
+      "care_phase": {
+        "background": 10859,
+        "recognition": 160,
+        "acute": 267,
+        "treatment": 599,
+        "recovery": 322,
+        "prevention": 267
+      }
+    },
+    "para_500": {
+      "total_chunks": 8307,
+      "stance": {
+        "neutral": 8159,
+        "alarm": 115,
+        "reassure": 33
+      },
+      "care_phase": {
+        "background": 6795,
+        "recognition": 156,
+        "acute": 259,
+        "treatment": 559,
+        "recovery": 287,
+        "prevention": 251
+      }
+    },
+    "para_800": {
+      "total_chunks": 5313,
+      "stance": {
+        "neutral": 5177,
+        "alarm": 103,
+        "mixed": 2,
+        "reassure": 31
+      },
+      "care_phase": {
+        "recognition": 152,
+        "acute": 246,
+        "recovery": 243,
+        "background": 3940,
+        "treatment": 502,
+        "prevention": 230
+      }
+    }
+  },
+  "stance_audit": {
+    "total_mismatches_all_strategies": 471,
+    "para_500_mismatches": 68,
+    "para_500_mismatches_by_document": {
+      "ACOG_POSTPARTUM_CONDITIONS": 9,
+      "NHS_BABY_BLUES": 14,
+      "NHS_LABOUR_SIGNS": 20,
+      "NHS_POSTNATAL": 18,
+      "NHS_SWELLING": 7
+    }
+  },
+  "validation_sample": {
+    "total": 296,
+    "by_stance": {
+      "neutral": 148,
+      "alarm": 115,
+      "reassure": 33
+    }
+  },
+  "query_set": {
+    "total_queries": 40,
+    "by_topic_and_urgency": {
+      "pph/urgent": 8,
+      "pph/routine": 2,
+      "hypertension/urgent": 8,
+      "hypertension/routine": 2,
+      "labour/urgent": 8,
+      "labour/routine": 2,
+      "postnatal/urgent": 8,
+      "postnatal/routine": 2
+    }
+  }
+}

@@ -9,6 +9,13 @@ Maternal_RAG_Corpus/chunks/
 Maternal_RAG_Corpus/chunks_tagged/
 Maternal_RAG_Corpus/validation_sample.csv
 Maternal_RAG_Corpus/stance_audit.csv
+Maternal_RAG_Corpus/chunks_tagged_for_colab.zip
+
+# Stage 5 output: embeddings + FAISS indexes. Large binaries, fully
+# reproducible from chunks_tagged/ + embed_index.py (or the Colab
+# notebook) + each index's own manifest.json (pinned model commit SHA +
+# corpus git commit), so not worth tracking in git.
+Maternal_RAG_Corpus/indexes/
 
 __pycache__/
 *.pyc
