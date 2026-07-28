@@ -75,7 +75,7 @@ def audit_stats():
     path = os.path.join(ROOT, "stance_audit.csv")
     if not os.path.exists(path):
         return {"total_mismatches": 0}
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
     para_500 = [r for r in rows if r["strategy"] == "para_500.csv"]
     return {
@@ -89,7 +89,7 @@ def validation_sample_stats():
     path = os.path.join(ROOT, "validation_sample.csv")
     if not os.path.exists(path):
         return {}
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
     return {"total": len(rows), "by_stance": dict(Counter(r["stance"] for r in rows))}
 

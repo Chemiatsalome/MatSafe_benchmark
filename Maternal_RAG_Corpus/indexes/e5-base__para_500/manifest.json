@@ -7,9 +7,9 @@
   "passage_prefix_applied": "passage: ",
   "query_prefix_to_apply_at_retrieval": "query: ",
   "chunk_set": "para_500",
-  "n_chunks": 8307,
-  "corpus_git_commit": "bff28ca1b087413096eb370d9280d39d093d2b06",
-  "encode_time_seconds": 99.2,
-  "model_load_time_seconds": 7.1,
+  "n_chunks": 8111,
+  "corpus_git_commit": "0fdd9993168acdfeae45de22fd618c1ac0e8364a",
+  "encode_time_seconds": 91.6,
+  "model_load_time_seconds": 7.4,
   "encoded_on": "Colab GPU"
 }

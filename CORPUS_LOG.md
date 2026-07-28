@@ -423,7 +423,25 @@ the kind of drift the freeze is meant to prevent going forward; that it was
 still possible to introduce *while writing the freeze documentation itself*
 is worth naming plainly rather than treating the freeze as if it retroactively
 guaranteed accuracy.
-- [ ] **Stage 7 — Run the grid.** encoder × retriever × k × chunk-strategy.
+- [x] **Stage 7 — Run the grid.** encoder × retriever × k × chunk-strategy.
+      First run 2026-07-24, on the pre-fix corpus (see 2026-07-27 erratum
+      above) — invalid, not used. **Re-run 2026-07-27** against corpus
+      commit `0fdd999` (post Stage 4b fixes): all 3 models re-encoded on
+      Colab GPU from the corrected `chunks_tagged/`, indexes rebuilt,
+      `run_grid.py` re-executed locally — 18/18 (encoder × chunk-set) cells,
+      40 queries each, 3,600 raw retrieval rows, no errors. Manifest
+      `corpus_git_commit` confirmed to match; `para_500` embedded 8,111 of
+      8,307 chunks, i.e. exactly the 196 `is_boilerplate` rows excluded, not
+      an off-by-some-other-number. Hypothesis holds on the corrected data:
+      `SafetyGap@1` is positive across all 18 cells (0.28–0.59 for urgent
+      queries, 0.375–0.875 for routine); `Unsafe@1` for urgent queries is
+      non-trivial in most cells, up to 0.1875 (`minilm__para_800`) and 0.0
+      for every routine cell, as the labelling function's design intends.
+      Pre-fix numbers were not archived before being overwritten, so no
+      exact before/after delta exists — only that the phenomenon persists,
+      and post-fix numbers are the trustworthy ones (pre-fix included
+      boilerplate contamination and topic/stance mislabeling that could have
+      pushed the gap either direction, not just narrowed it).
 
 ---
 
@@ -575,6 +593,71 @@ Kept for the paper's provenance record. Ordered oldest to newest.
   voice in the ambiguity-pair table is the WHO guideline itself, not this
   document. Contains one reassuring caveat line on lochia within an otherwise
   ALARM-toned document — noted in its `notes` field rather than smoothed over.
+- **ERRATUM (2026-07-27), found post-freeze — Stage 7 had already run
+  (2026-07-24 `results/`, indexes built) on defective Stage 4b tags.**
+  External review of `validation_sample.csv` (a second Claude Code session,
+  cross-checked against actual `chunks_tagged/` output rather than taken on
+  faith) surfaced three confirmed bugs, all fixed in `tag_chunks.py`:
+  1. **Topic inheritance too coarse.** `metadata.csv`'s document-level
+     `topics` column was being applied unchanged to every chunk of the 3
+     omnibus multi-topic manuals (`KE_OBSTETRICS_2021`, `KE_MNH_STANDARDS_2023`,
+     `KE_MCH_HANDBOOK`) plus `CDC_HEAR_HER`, `NHS_POSTNATAL`,
+     `ACOG_POSTPARTUM_CONDITIONS` — 3,144 of 8,307 `para_500` chunks (37.8%)
+     inherited all 5 topics regardless of content (e.g. a Silverman-Andersen
+     respiratory-distress-score chunk and a DKA lab-values chunk both
+     inherited `pph`). This fed directly into `L(d,q)` via `run_grid.py`, not
+     just display. Fixed with a per-chunk keyword classifier restricted to
+     each document's declared topic set (single-topic documents are
+     untouched — no ambiguity to resolve there). Result: 1,891 of those 3,185
+     chunks (59%) now correctly drop to zero topics. New `topics` column in
+     `chunks_tagged/`; `run_grid.py` now reads it instead of
+     `metadata.csv` directly.
+  2. **Stance regex lacked negation/numeric context.** `\blife-threatening\b`
+     matched inside "NON-LIFE-THREATENING CONDITIONS" (tagged `alarm`);
+     `\bis common\b`/`\bis normal\b` matched lab reference ranges and
+     unrelated prevalence statistics inside otherwise-dangerous chunks (a
+     DKA base-excess table, an APH mortality statement) and tagged them
+     `reassure`. Fixed with a negation-token lookback window on alarm
+     patterns and a numeric-adjacency guard on reassure patterns, plus one
+     missing alarm pattern ("death may occur") that had let the APH chunk's
+     genuine danger content go undetected in the first place. Net corpus-wide
+     effect on `para_500`: 5 chunks changed stance (not a large rewrite —
+     targeted false-positive removal, verified against the existing
+     `safety_label.py` smoke test, which still passes unchanged, and the
+     project's own flagship "It's normal to get some swelling" example,
+     confirmed still tagged `reassure`).
+  3. **Boilerplate chunks (TOC, figure/table indices, collapsed
+     glossary/reference tables) were retrievable and mistagged** — e.g. the
+     `WHO_POSTNATAL_2022` acronym glossary tagged `alarm`/`acute` purely
+     because "ALTE = apparent life-threatening event" contains
+     "life-threatening" (not a negation case — a boilerplate-content case,
+     out of reach of fix #2). New `is_boilerplate` column, computed from two
+     signals calibrated against the real corpus rather than assumed: a dot-leader
+     run (`\.{4,}\s*\d`, the TOC/index signature) for both chunking
+     strategies, plus zero-sentence-punctuation-and-zero-bullets for `para`
+     chunks only. The `para`-only restriction is itself a finding: applying
+     the second signal to `fixed`-strategy chunks produced false positives
+     (a sliding character window can land entirely inside one real sentence
+     with no period in it — confirmed on a `WHO_PPH_2025` scope-statement
+     slice), which would have unevenly damaged the fixed-vs-para strategy
+     comparison the paper's grid depends on. An acronym-density heuristic
+     was tried first and rejected: real corpus density ranged higher for
+     some legitimate chunks (max 3.8/100 chars) than for the actual glossary
+     chunk (2.5/100 chars) — not separable. Flagged rows stay in
+     `chunks_tagged/` for audit; `encode_chunks.py` excludes them from the
+     embedding index, so they can never be retrieved. Rate: 0.9–2.4% of
+     chunks per chunk-set.
+
+  **Consequence: `Maternal_RAG_Corpus/indexes/` and `Maternal_RAG_Corpus/results/`
+  (dated 2026-07-24) were built from the pre-fix `chunks_tagged/` output and
+  are now stale.** Per this file's own freeze policy (§6), this is logged
+  here rather than silently patched. `encode_chunks.py` → `build_faiss_index.py`
+  → `run_grid.py` must be re-run before any numbers from the 2026-07-24
+  results are used in the paper.
+  **RESOLVED 2026-07-27 — see the Stage 7 entry in §6** for the re-run
+  against corpus commit `0fdd999` and confirmation that the paper's core
+  hypothesis (retrieval precision and clinical safety diverge) still holds
+  on the corrected data.
 
 ---
 

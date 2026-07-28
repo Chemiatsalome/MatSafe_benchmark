@@ -52,11 +52,6 @@ K_VALUES = [1, 3, 5]
 K_MAX = max(K_VALUES)
 
 
-def load_topics_by_doc():
-    with open(os.path.join(ROOT, "metadata.csv"), encoding="utf-8") as f:
-        return {r["document_id"]: r["topics"] for r in csv.DictReader(f)}
-
-
 def load_queries():
     with open(os.path.join(ROOT, "query_set.csv"), encoding="utf-8") as f:
         return list(csv.DictReader(f))
@@ -69,7 +64,6 @@ def load_chunk_lookup(chunk_set):
 
 def main():
     os.makedirs(RESULTS_DIR, exist_ok=True)
-    topics_by_doc = load_topics_by_doc()
     queries = load_queries()
     query_by_id = {q["query_id"]: q for q in queries}
 
@@ -111,9 +105,9 @@ def main():
                 score = float(D[row_i][rank])
                 chunk_id = index_chunk_ids[pos]
                 c = chunk_lookup[chunk_id]
-                doc_topics = topics_by_doc.get(c["document_id"], "")
+                chunk_topics = c["topics"]
 
-                lbl = label(c["stance"], c["care_phase"], doc_topics,
+                lbl = label(c["stance"], c["care_phase"], chunk_topics,
                             q["topic"], q["urgency_class"])
                 labels_in_rank_order.append(lbl)
 

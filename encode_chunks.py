@@ -87,8 +87,13 @@ def git_commit_hash():
 
 
 def load_chunk_set(fname):
+    """Excludes rows tag_chunks.py flagged is_boilerplate=True (table of
+    contents, figure/table indices, collapsed glossary/reference tables) --
+    those chunks stay in chunks_tagged/ for audit but never enter the
+    embedding index, so they can never be retrieved."""
     with open(os.path.join(CHUNKS_TAGGED, fname), encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+        rows = list(csv.DictReader(f))
+    return [r for r in rows if r.get("is_boilerplate") != "True"]
 
 
 def encode_one(model, model_sha, load_s, model_spec, chunk_set_name, rows, corpus_commit):
